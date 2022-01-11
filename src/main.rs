@@ -25,7 +25,7 @@ struct Args {
     /// The file to convert
     #[structopt(name = "file-to-convert", parse(from_os_str))]
     path: PathBuf,
-    /// Every CRLF in the file will be converted to LF
+    /// Every CRLF in the file will be converted to LF. This is the default option
     #[structopt(name = "crlf-to-lf", long)]
     crlf_to_lf: bool,
     /// Every LF in the file will be converted to CRLF
