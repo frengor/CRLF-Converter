@@ -6,7 +6,7 @@ use itertools::Itertools;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "crlfconverter", about, author)]
+#[structopt(name = "CRLF-Converter", about, author)]
 struct Args {
     /// The file to convert
     #[structopt(name = "file-to-convert", parse(from_os_str))]
