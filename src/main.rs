@@ -53,7 +53,7 @@ fn modify_content(path: &Path, f: impl FnOnce(String) -> Result<String>) -> Resu
 fn crlf_to_lf(string: String) -> Result<String> {
     Ok(string.chars()
     .peekable()
-    .batching(move |c| {
+    .batching(|c| {
         match c.next() {
             Some('\r') => {
                 match c.peek() {
@@ -75,7 +75,7 @@ fn lf_to_crlf(string: String) -> Result<String> {
     let mut out_n = false;
     Ok(string.chars()
     .peekable()
-    .batching(move |c| {
+    .batching(|c| {
         if out_n {
             out_n = false;
             Some('\n')
