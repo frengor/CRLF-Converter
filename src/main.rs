@@ -44,14 +44,14 @@ fn main() -> Result<()> {
     }
 }
 
-fn modify_content(path: &Path, f: impl FnOnce(String) -> Result<String>) -> Result<()> {
+fn modify_content(path: &Path, f: impl FnOnce(&str) -> String) -> Result<()> {
     let str = fs::read_to_string(&path).with_context(|| format!(r#"Failed to read from "{}""#, path.display()))?;
-    let str = f(str)?;
+    let str = f(&str);
     fs::write(&path, str).with_context(|| format!(r#"Failed to write to "{}""#, path.display()))
 }
 
-fn crlf_to_lf(string: String) -> Result<String> {
-    Ok(string.chars()
+fn crlf_to_lf(string: &str) -> String {
+    string.chars()
     .peekable()
     .batching(|c| {
         match c.next() {
@@ -68,12 +68,12 @@ fn crlf_to_lf(string: String) -> Result<String> {
             x => x,
         }
     })
-    .collect())
+    .collect()
 }
 
-fn lf_to_crlf(string: String) -> Result<String> {
+fn lf_to_crlf(string: &str) -> String {
     let mut out_n = false;
-    Ok(string.chars()
+    string.chars()
     .peekable()
     .batching(|c| {
         if out_n {
@@ -97,5 +97,5 @@ fn lf_to_crlf(string: String) -> Result<String> {
             }
         }
     })
-    .collect())
+    .collect()
 }
