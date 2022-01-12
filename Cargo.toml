@@ -1,5 +1,5 @@
 [package]
-name = "crlf_converter"
+name = "crlf-converter"
 description = "Convert CRLF files to LF and vice versa"
 version = "0.1.0"
 authors = ["fren_gor <goro@frengor.com>"]
