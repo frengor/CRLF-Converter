@@ -35,24 +35,21 @@ struct Args {
 
 fn main() -> Result<()> {
     let mut args: Args = Args::from_args();
-    {
-        let current_dir = std::env::current_dir().with_context(|| format!("Cannot get current directory"))?;
-        args.paths = args.paths.into_iter()
-        .filter(|path| {
-            if !path.exists() {
-                eprintln!(r#"File "{}" does not exists"#, path.display());
-                return false;
-            }
+    args.paths = args.paths.into_iter()
+    .filter(|path| {
+        if !path.exists() {
+            eprintln!(r#"File "{}" does not exists"#, path.display());
+            return false;
+        }
 
-            if !path.is_file() {
-                eprintln!(r#"File "{}" is not a valid file to convert"#, path.display());
-                return false;
-            }
+        if !path.is_file() {
+            eprintln!(r#"File "{}" is not a valid file to convert"#, path.display());
+            return false;
+        }
 
-            true
-        })
-        .collect();
-    }
+        true
+    })
+    .collect();
 
     if args.paths.is_empty() {
         bail!("No valid files have been provided.");
