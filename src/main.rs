@@ -37,15 +37,8 @@ fn main() -> Result<()> {
     let mut args: Args = Args::from_args();
     {
         let current_dir = std::env::current_dir().with_context(|| format!("Cannot get current directory"))?;
-        args.paths = args.paths.into_iter().map(|path| {
-            if !path.is_absolute() {
-                let mut current_dir = current_dir.clone();
-                current_dir.push(path);
-                current_dir
-            } else {
-                path
-            }
-        }).filter(|path| {
+        args.paths = args.paths.into_iter()
+        .filter(|path| {
             if !path.exists() {
                 eprintln!(r#"File "{}" does not exists"#, path.display());
                 return false;
@@ -57,7 +50,8 @@ fn main() -> Result<()> {
             }
 
             true
-        }).collect();
+        })
+        .collect();
     }
 
     if args.paths.is_empty() {
