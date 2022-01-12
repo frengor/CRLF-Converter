@@ -22,13 +22,13 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 #[structopt(name = "CRLF-Converter", about, author)]
 struct Args {
-    /// The file to convert
-    #[structopt(name = "file-to-convert", parse(from_os_str))]
-    path: PathBuf,
-    /// Every CRLF in the file will be converted to LF. This is the default option
+    /// The file(s) to convert
+    #[structopt(name = "file-to-convert", required(true), parse(from_os_str))]
+    paths: Vec<PathBuf>,
+    /// Every CRLF in the file(s) will be converted to LF. This is the default option
     #[structopt(name = "crlf-to-lf", long)]
     crlf_to_lf: bool,
-    /// Every LF in the file will be converted to CRLF
+    /// Every LF in the file(s) will be converted to CRLF
     #[structopt(name = "lf-to-crlf", long)]
     lf_to_crlf: bool,
 }
@@ -36,32 +36,53 @@ struct Args {
 fn main() -> Result<()> {
     let mut args: Args = Args::from_args();
     {
-        let path = &args.path;
-        if !path.is_absolute() {
-            let mut current_dir = std::env::current_dir().with_context(|| format!("Cannot get current directory"))?;
-            current_dir.push(path);
-            args.path = current_dir;
-        }
+        let current_dir = std::env::current_dir().with_context(|| format!("Cannot get current directory"))?;
+        args.paths = args.paths.into_iter().map(|path| {
+            if !path.is_absolute() {
+                let mut current_dir = current_dir.clone();
+                current_dir.push(path);
+                current_dir
+            } else {
+                path
+            }
+        }).filter(|path| {
+            if !path.exists() {
+                eprintln!(r#"File "{}" does not exists"#, path.display());
+                return false;
+            }
 
-        if !args.path.exists() {
-            bail!(r#"File "{}" does not exists"#, args.path.display());
-        }
+            if !path.is_file() {
+                eprintln!(r#"File "{}" is not a valid file to convert"#, path.display());
+                return false;
+            }
 
-        if !args.path.is_file() {
-            bail!(r#"File "{}" is not a valid file to convert"#, args.path.display());
-        }
+            true
+        }).collect();
     }
+
+    if args.paths.is_empty() {
+        bail!("No valid files have been provided.");
+    }
+
     match args {
         Args { crlf_to_lf: true, lf_to_crlf: true, .. } => bail!("--crlf-to-lf and --lf-to-crlf cannot be enabled at the same time"),
-        Args { path, lf_to_crlf: true, .. } => modify_content(&path, lf_to_crlf),
-        Args { path, .. } => modify_content(&path, crlf_to_lf),
+        Args { paths, lf_to_crlf: true, .. } => convert(&paths, lf_to_crlf),
+        Args { paths, .. } => convert(&paths, crlf_to_lf),
     }
 }
 
-fn modify_content(path: &Path, f: impl FnOnce(&str) -> String) -> Result<()> {
+fn convert(paths: &Vec<PathBuf>, f: impl Fn(&str) -> String) -> Result<()> {
+    for path in paths {
+        modify_content(path, &f)?;
+        println!(r#""{}" has been converted."#, path.display());
+    }
+    Ok(())
+}
+
+fn modify_content(path: &Path, f: impl Fn(&str) -> String) -> Result<()> {
     let str = fs::read_to_string(&path).with_context(|| format!(r#"Failed to read from "{}""#, path.display()))?;
     let str = f(&str);
-    fs::write(&path, str).with_context(|| format!(r#"Failed to write to "{}""#, path.display()))
+    fs::write(&path, &str).with_context(|| format!(r#"Failed to write to "{}""#, path.display()))
 }
 
 fn crlf_to_lf(string: &str) -> String {
