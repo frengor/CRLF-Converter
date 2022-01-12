@@ -7,7 +7,7 @@ Build it with `cargo build --release`
 Enjoy!  
 
 ```
-$ crlf_converter --help
+$ crlf-converter --help
 CRLF-Converter 0.1.1
 fren_gor <goro@frengor.com>
 Convert CRLF files to LF and vice versa
