@@ -13,10 +13,11 @@
 //   limitations under the License.
 
 use std::fs;
+use std::iter::from_fn;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
-use itertools::Itertools;
+use size_hint::HintSize;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -77,15 +78,16 @@ fn modify_content(path: &Path, f: impl Fn(&str) -> String) -> Result<()> {
 }
 
 fn crlf_to_lf(string: &str) -> String {
-    string.chars()
-    .peekable()
-    .batching(|c| {
-        match c.next() {
+    let counter = string.chars().count();
+
+    let mut it = string.chars().peekable();
+    from_fn(|| {
+        match it.next() {
             Some('\r') => {
-                match c.peek() {
+                match it.peek() {
                     Some('\n') => {
                         // Actually consume '\n'
-                        c.next();
+                        it.next();
                         Some('\n')
                     },
                     _ => Some('\r'),
@@ -94,23 +96,26 @@ fn crlf_to_lf(string: &str) -> String {
             x => x,
         }
     })
+    .hint_size(counter)
     .collect()
 }
 
 fn lf_to_crlf(string: &str) -> String {
     let mut out_n = false;
-    string.chars()
-    .peekable()
-    .batching(|c| {
+    let mut counter: usize = 0;
+    counter += string.chars().inspect(|c| if *c == '\n' { counter += 1 }).count();
+
+    let mut it = string.chars().peekable();
+    from_fn(|| {
         if out_n {
             out_n = false;
             Some('\n')
         } else {
-            match c.next() {
+            match it.next() {
                 Some('\r') => {
-                    if let Some('\n') = c.peek() {
+                    if let Some('\n') = it.peek() {
                         // Actually consume '\n'
-                        c.next();
+                        it.next();
                         out_n = true;
                     }
                     Some('\r')
@@ -123,5 +128,6 @@ fn lf_to_crlf(string: &str) -> String {
             }
         }
     })
+    .hint_size(counter)
     .collect()
 }
