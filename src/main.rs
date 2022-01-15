@@ -143,3 +143,18 @@ fn lf_to_crlf(string: &str) -> String {
     str.extend(iter);
     str
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn crlf_to_lf_test() {
+        assert_eq!(crlf_to_lf("Hello!\r\nHow\r\nare\ryou\n?\n\r"), String::from("Hello!\nHow\nare\ryou\n?\n\r"));
+    }
+
+    #[test]
+    fn lf_to_crlf_test() {
+        assert_eq!(lf_to_crlf("Hello!\n\nHow\r\nare\ryou\n?\n\r"), String::from("Hello!\r\n\r\nHow\r\nare\ryou\r\n?\r\n\r"));
+    }
+}
