@@ -13,11 +13,10 @@
 //   limitations under the License.
 
 use std::fs;
-use std::iter::from_fn;
+use std::iter::{from_fn, Extend};
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
-use size_hint::HintSize;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -36,21 +35,24 @@ struct Args {
 
 fn main() -> Result<()> {
     let mut args: Args = Args::from_args();
-    args.paths = args.paths.into_iter()
-    .filter(|path| {
-        if !path.exists() {
-            eprintln!(r#"File "{}" does not exists"#, path.display());
-            return false;
-        }
+    {
+        let mut v = Vec::with_capacity(args.paths.len());
+        v.extend(args.paths.into_iter()
+        .filter(|path| {
+            if !path.exists() {
+                eprintln!(r#"File "{}" does not exists"#, path.display());
+                return false;
+            }
 
-        if !path.is_file() {
-            eprintln!(r#"File "{}" is not a valid file to convert"#, path.display());
-            return false;
-        }
+            if !path.is_file() {
+                eprintln!(r#"File "{}" is not a valid file to convert"#, path.display());
+                return false;
+            }
 
-        true
-    })
-    .collect();
+            true
+        }));
+        args.paths = v;
+    }
 
     if args.paths.is_empty() {
         bail!("No valid files have been provided.");
@@ -78,10 +80,8 @@ fn modify_content(path: &Path, f: impl Fn(&str) -> String) -> Result<()> {
 }
 
 fn crlf_to_lf(string: &str) -> String {
-    let counter = string.chars().count();
-
     let mut it = string.chars().peekable();
-    from_fn(|| {
+    let iter = from_fn(|| {
         match it.next() {
             Some('\r') => {
                 match it.peek() {
@@ -95,18 +95,28 @@ fn crlf_to_lf(string: &str) -> String {
             }
             x => x,
         }
-    })
-    .hint_size(counter)
-    .collect()
+    });
+    let mut str = String::with_capacity(string.len());
+    str.extend(iter);
+    str
 }
 
 fn lf_to_crlf(string: &str) -> String {
     let mut out_n = false;
-    let mut counter: usize = 0;
-    counter += string.chars().inspect(|c| if *c == '\n' { counter += 1 }).count();
+    let mut prev_r = false;
+    // Calculate the capacity for the returned String
+    // Preferring spending some time here instead of allocating more heap since files can be very large
+    let final_capacity = string.len() + string.chars().filter(|&c| {
+        match (prev_r, c) {
+            (_, '\r') => { prev_r = true; false },
+            (true, _) => { prev_r = false; false },
+            (_, '\n') => true,
+            _ => false,
+        }
+    }).count();
 
     let mut it = string.chars().peekable();
-    from_fn(|| {
+    let iter = from_fn(|| {
         if out_n {
             out_n = false;
             Some('\n')
@@ -127,7 +137,9 @@ fn lf_to_crlf(string: &str) -> String {
                 x => x,
             }
         }
-    })
-    .hint_size(counter)
-    .collect()
+    });
+    // Don't allocate more than needed
+    let mut str = String::with_capacity(final_capacity);
+    str.extend(iter);
+    str
 }

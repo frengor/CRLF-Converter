@@ -11,4 +11,3 @@ edition = "2021"
 [dependencies]
 structopt = "0.3.25"
 anyhow = "1.0.52"
-size_hint = "0.1.3"
