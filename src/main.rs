@@ -13,7 +13,7 @@
 //   limitations under the License.
 
 use std::fs;
-use std::iter::{from_fn, Extend};
+use std::iter::{Extend, from_fn};
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
@@ -35,24 +35,21 @@ struct Args {
 
 fn main() -> Result<()> {
     let mut args: Args = Args::from_args();
-    {
-        let mut v = Vec::with_capacity(args.paths.len());
-        v.extend(args.paths.into_iter()
-        .filter(|path| {
-            if !path.exists() {
-                eprintln!(r#"File "{}" does not exists"#, path.display());
-                return false;
-            }
+    args.paths = args.paths.into_iter()
+    .filter(|path| {
+        if !path.exists() {
+            eprintln!(r#"File "{}" does not exists"#, path.display());
+            return false;
+        }
 
-            if !path.is_file() {
-                eprintln!(r#"File "{}" is not a valid file to convert"#, path.display());
-                return false;
-            }
+        if !path.is_file() {
+            eprintln!(r#"File "{}" is not a valid file to convert"#, path.display());
+            return false;
+        }
 
-            true
-        }));
-        args.paths = v;
-    }
+        true
+    })
+    .collect();
 
     if args.paths.is_empty() {
         bail!("No valid files have been provided.");
