@@ -35,8 +35,7 @@ struct Args {
 
 fn main() -> Result<()> {
     let mut args: Args = Args::parse();
-    args.paths = args.paths.into_iter()
-    .filter(|path| {
+    args.paths.retain(|path| {
         if !path.exists() {
             eprintln!(r#"File "{}" does not exists"#, path.display());
             return false;
@@ -48,8 +47,7 @@ fn main() -> Result<()> {
         }
 
         true
-    })
-    .collect();
+    });
 
     if args.paths.is_empty() {
         bail!("No valid files have been provided.");
@@ -71,9 +69,9 @@ fn convert(paths: &Vec<PathBuf>, f: impl Fn(&str) -> String) -> Result<()> {
 }
 
 fn modify_content(path: &Path, f: impl Fn(&str) -> String) -> Result<()> {
-    let str = fs::read_to_string(&path).with_context(|| format!(r#"Failed to read from "{}""#, path.display()))?;
+    let str = fs::read_to_string(path).with_context(|| format!(r#"Failed to read from "{}""#, path.display()))?;
     let str = f(&str);
-    fs::write(&path, &str).with_context(|| format!(r#"Failed to write to "{}""#, path.display()))
+    fs::write(path, str).with_context(|| format!(r#"Failed to write to "{}""#, path.display()))
 }
 
 fn crlf_to_lf(string: &str) -> String {
