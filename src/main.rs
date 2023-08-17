@@ -17,24 +17,24 @@ use std::iter::{Extend, from_fn};
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
-use structopt::StructOpt;
+use clap::Parser;
 
-#[derive(StructOpt, Debug)]
-#[structopt(name = "CRLF-Converter", about, author)]
+#[derive(Parser, Debug)]
+#[command(name = "CRLF-Converter", author, version, about, long_about = None)]
 struct Args {
     /// The file(s) to convert
-    #[structopt(name = "file-to-convert", required(true), parse(from_os_str))]
+    #[arg(value_name = "file-to-convert")]
     paths: Vec<PathBuf>,
     /// Every CRLF in the file(s) will be converted to LF. This is the default option
-    #[structopt(name = "crlf-to-lf", long)]
+    #[arg(long)]
     crlf_to_lf: bool,
     /// Every LF in the file(s) will be converted to CRLF
-    #[structopt(name = "lf-to-crlf", long)]
+    #[arg(long)]
     lf_to_crlf: bool,
 }
 
 fn main() -> Result<()> {
-    let mut args: Args = Args::from_args();
+    let mut args: Args = Args::parse();
     args.paths = args.paths.into_iter()
     .filter(|path| {
         if !path.exists() {
