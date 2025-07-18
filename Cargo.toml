@@ -9,5 +9,5 @@ license = "Apache-2.0"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.3.21", features = ["derive"] }
-anyhow = "1.0.75"
+clap = { version = "4.5.41", features = ["derive"] }
+anyhow = "1.0.98"
